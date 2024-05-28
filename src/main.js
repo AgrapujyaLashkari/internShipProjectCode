@@ -13,8 +13,10 @@ function Main() {
     const [qrCodeData, setQrCodeData] = useState("");
     const [scanning, setScanning] = useState(false);
     const [allowedLocation, setAllowedLocation] = useState([]);
+    const [loading, setLaoding] = useState(true);
 
     useEffect(() => {
+        setLaoding(true);
         fetchItems();
     }, []);
 
@@ -26,7 +28,9 @@ function Main() {
         fetch("https://api-staging.inveesync.in/test/get-items")
             .then(response => response.json())
             .then(data => setState(data))
-            .catch(error => console.error('Error fetching items:', error));
+            .catch(error => console.error('Error fetching items:', error)).finally(() => {
+                setLaoding(false);
+            });
     };
 
     const initializeScanner = () => {
@@ -52,13 +56,6 @@ function Main() {
     const handle = ()=>{
         setScanning(!scanning)
     }
-    // const handleDestinationFocus = () => {
-    //     setScanning(true);
-    // };
-
-    // const handleDestinationBlur = () => {
-    //     setScanning(false);
-    // };
 
     const handleSubmit = () => {
         if (allowedLocation.includes(qrCodeData)) {
@@ -136,65 +133,69 @@ function Main() {
         return 'out of range';
     };
 
-    return (
-        <div className="parent">
-            <div className="upperContainer">
-                <div className="dropDown">
-                    <label>Select Items</label>
-                    <select onChange={(e) => handleItemSelected(e.target.value)}>
-                        <option>Select Item</option>
-                        {state.map(item => (
-                            <option key={item.id} value={item.id}>{item.item_name}</option>
-                        ))}
-                    </select>
-
+    console.log("loading state", loading);
+        return (
+            <>
+            {loading ? <>Loading ...</> : (<div className="parent">
+                <div className="upperContainer">
+                    <div className="dropDown">
+                        <label>Select Items</label>
+                        <select onChange={(e) => handleItemSelected(e.target.value)}>
+                            <option>Select Item</option>
+                            {state.map(item => (
+                                <option key={item.id} value={item.id}>{item.item_name}</option>
+                            ))}
+                        </select>
+    
+                    </div>
+                    <div className="quantity">
+                        <div>
+                            <label>Quantity</label>
+                            <br />
+                            <input
+                                onChange={(e) => {
+                                    setPrice(numberToText(e.target.value))
+                                }}
+                                min={0}
+                                className="number"
+                                type="number"
+                            />
+                        </div>
+                        <div>
+                            <label>Unit</label>
+                            <br />
+                            <input value={value} className="unit" type="text" readOnly />
+                        </div>
+                    </div>
+                    <div className='price'>{price}</div>
                 </div>
-                <div className="quantity">
+                <div className="lowerContainer">
                     <div>
-                        <label>Quantity</label>
+                        <label>Destination Location</label>
                         <br />
                         <input
-                            onChange={(e) => {
-                                setPrice(numberToText(e.target.value))
-                            }}
-                            min={0}
-                            className="number"
-                            type="number"
+                            className="qrCode"
+                            type="text"
+                            value={qrCodeData}
+                            onClick={handle}
+                            readOnly
                         />
                     </div>
-                    <div>
-                        <label>Unit</label>
-                        <br />
-                        <input value={value} className="unit" type="text" readOnly />
+                </div>
+                {scanning && (
+                    <div className="modal">
+                        <div id="reader"></div>
+                        <button className='modalClose' onClick={handle}>X</button>
                     </div>
-                </div>
-                <div className='price'>{price}</div>
-            </div>
-            <div className="lowerContainer">
-                <div>
-                    <label>Destination Location</label>
-                    <br />
-                    <input
-                        className="qrCode"
-                        type="text"
-                        value={qrCodeData}
-                        // onFocus={handleDestinationFocus}
-                        // onBlur={handleDestinationBlur}
-                        onClick={handle}
-                        readOnly
-                    />
-                </div>
-            </div>
-            {scanning && (
-                <div className="modal">
-                    <div id="reader"></div>
-                    <button className='modalClose' onClick={handle}>X</button>
-                </div>
-            )}
-            <button type='button' onClick={handleSubmit}>Submit</button>
-            <ToastContainer />
-        </div>
-    );
-}
+                )}
+                <button type='button' onClick={handleSubmit}>Submit</button>
+                <ToastContainer />
+            </div>)}
+            
+            </>
+        );
+
+    }
+
 
 export default Main;
